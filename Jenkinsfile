@@ -25,21 +25,27 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('sonar-server') {
-                    sh '''
-                    mvn sonar:sonar \
-                    -Dsonar.projectKey=addressbook \
-                    -Dsonar.host.url=http://13.221.57.54:9000 \
-                    -Dsonar.login=admin
+        
                     '''
                 }
             }
         }
 
         stage('Quality Gate') {
-            steps {
+            steps {stage('SonarQube Analysis') {
+    steps {
+        withSonarQubeEnv('sonar-server') {
+            withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                sh '''
+                mvn sonar:sonar \
+                -Dsonar.projectKey=addressbook \
+                -Dsonar.host.url=http://13.221.57.54:9000 \
+                -Dsonar.login=$SONAR_TOKEN
+                '''
+            }
+        }
+    }
+}
                 timeout(time: 2, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
