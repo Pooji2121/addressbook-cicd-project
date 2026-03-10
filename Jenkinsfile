@@ -13,24 +13,41 @@ pipeline {
             }
         }
 
+        stage('Compile the code') {
+            steps {
+                sh 'mvn clean compile'
+            }
+        }
+
+        stage('Testing the code') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+
+        stage('QA of the code') {
+            steps {
+                sh 'mvn pmd:pmd'
+            }
+        }
+
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonar-server') {
-                    sh 'mvn clean verify sonar:sonar'
+                    sh 'mvn sonar:sonar'
                 }
             }
         }
 
-        stage('Build') {
+        stage('Package') {
             steps {
-                sh 'mvn clean package'
+                sh 'mvn package'
             }
         }
 
-        stage('Deploy to Tomcat') {
+        stage('Deploy the project on tomcat') {
             steps {
-                sh 'sudo mv /var/lib/jenkins/workspace/addressbook-pipeline/target/addressbook.war /home/ubuntu/apache-tomcat-8.5.100/webapps/'
-'
+                sh 'sudo cp /var/lib/jenkins/workspace/addressbook-pipeline/target/addressbook.war /home/ubuntu/apache-tomcat-8.5.100/webapps/'
             }
         }
 
