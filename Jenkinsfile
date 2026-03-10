@@ -5,11 +5,16 @@ pipeline {
         maven 'Maven'
     }
 
+    environment {
+        SONAR_SERVER = "sonar-server"
+        SONAR_TOKEN = credentials('sonarqube-token')
+    }
+
     stages {
 
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/akshu20791/addressbook-cicd-project'
+                git 'https://github.com/Pooji2121/addressbook-cicd-project.git'
             }
         }
 
@@ -25,27 +30,21 @@ pipeline {
             }
         }
 
-        
-                    '''
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonar-server') {
+                    sh """
+                    mvn sonar:sonar \
+                    -Dsonar.projectKey=addressbook \
+                    -Dsonar.host.url=http://13.221.57.54:9000 \
+                    -Dsonar.login=${SONAR_TOKEN}
+                    """
                 }
             }
         }
 
         stage('Quality Gate') {
-            steps {stage('SonarQube Analysis') {
-    steps {
-        withSonarQubeEnv('sonar-server') {
-            withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
-                sh '''
-                mvn sonar:sonar \
-                -Dsonar.projectKey=addressbook \
-                -Dsonar.host.url=http://13.221.57.54:9000 \
-                -Dsonar.login=$SONAR_TOKEN
-                '''
-            }
-        }
-    }
-}
+            steps {
                 timeout(time: 2, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
@@ -55,7 +54,9 @@ pipeline {
         stage('Download Sonar Report') {
             steps {
                 sh '''
-                curl -u admin:admin http://13.221.57.54:9000/api/issues/search?componentKeys=addressbook > sonar-report.json
+                curl -u admin:admin \
+                "http://13.221.57.54:9000/api/issues/search?componentKeys=addressbook" \
+                -o sonar-report.json
                 '''
             }
         }
@@ -63,30 +64,29 @@ pipeline {
         stage('Upload Report to GitHub') {
             steps {
                 sh '''
+                git config --global user.name "jenkins"
                 git config --global user.email "jenkins@example.com"
-                git config --global user.name "Jenkins"
 
-                git add sonar-report.json || true
-                git commit -m "Add SonarQube report" || true
-                git push origin master || true
+                git add sonar-report.json
+                git commit -m "Added SonarQube report"
+                git push origin master
                 '''
             }
         }
 
         stage('Package WAR') {
             steps {
-                sh 'mvn package'
+                sh 'mvn clean package'
             }
         }
 
         stage('Deploy to Tomcat') {
             steps {
                 sh '''
-                cp target/addressbook.war /home/ubuntu/devops/apache-tomcat-9.0.115/webapps/
+                sudo cp target/addressbook.war /home/ubuntu/devops/apache-tomcat-9.0.115/webapps/
                 '''
             }
         }
-
     }
 
     post {
@@ -97,13 +97,10 @@ pipeline {
                 body: """
 Build Successful
 
-Job Name: ${env.JOB_NAME}
+Job: ${env.JOB_NAME}
 Build Number: ${env.BUILD_NUMBER}
 Status: SUCCESS
 Time: ${new Date()}
-
-Application URL:
-http://13.222.44.218:8085/addressbook
 """,
                 to: "poojinuthalapati09@gmail.com"
             )
@@ -115,7 +112,7 @@ http://13.222.44.218:8085/addressbook
                 body: """
 Build Failed
 
-Job Name: ${env.JOB_NAME}
+Job: ${env.JOB_NAME}
 Build Number: ${env.BUILD_NUMBER}
 Status: FAILED
 Time: ${new Date()}
