@@ -5,10 +5,6 @@ pipeline {
         maven 'Maven'
     }
 
-    environment {
-        SCANNER_HOME = tool 'SonarQubeScanner'
-    }
-
     stages {
 
         stage('Checkout Code') {
