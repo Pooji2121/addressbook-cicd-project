@@ -5,29 +5,27 @@ pipeline {
         maven 'Maven'
     }
 
+    environment {
+        SCANNER_HOME = tool 'SonarQubeScanner'
+    }
+
     stages {
 
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/akshu20791/addressbook-cicd-project'
+                git 'https://github.com/Pooji2121/addressbook-cicd-project'
             }
         }
 
-        stage('Compile the code') {
+        stage('Compile Code') {
             steps {
                 sh 'mvn clean compile'
             }
         }
 
-        stage('Testing the code') {
+        stage('Test Code') {
             steps {
                 sh 'mvn test'
-            }
-        }
-
-        stage('QA of the code') {
-            steps {
-                sh 'mvn pmd:pmd'
             }
         }
 
@@ -39,7 +37,7 @@ pipeline {
             }
         }
 
-        stage('Package') {
+        stage('Package WAR') {
             steps {
                 sh 'mvn package'
             }
@@ -47,8 +45,20 @@ pipeline {
 
         stage('Deploy to Tomcat') {
             steps {
-                sh 'sudo cp target/addressbook.war /home/ubuntu/apache-tomcat-8.5.100/webapps/'
+                sh 'sudo cp target/addressbook.war /home/ubuntu/devops/apache-tomcat-9.0.115/webapps/'
             }
+        }
+
+    }
+
+    post {
+
+        success {
+            echo 'Application Deployed Successfully!'
+        }
+
+        failure {
+            echo 'Build Failed!'
         }
 
     }
