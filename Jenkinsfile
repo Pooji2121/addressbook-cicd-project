@@ -5,10 +5,6 @@ pipeline {
         maven 'Maven'
     }
 
-    environment {
-        SONAR_SERVER = 'http://13.221.57.54:9000'
-    }
-
     stages {
 
         stage('Checkout Code') {
@@ -31,11 +27,11 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {
+                withSonarQubeEnv('sonar-server') {
                     sh '''
                     mvn sonar:sonar \
                     -Dsonar.projectKey=addressbook \
-                    -Dsonar.host.url=$SONAR_SERVER \
+                    -Dsonar.host.url=http://13.221.57.54:9000 \
                     -Dsonar.login=admin
                     '''
                 }
@@ -53,7 +49,7 @@ pipeline {
         stage('Download Sonar Report') {
             steps {
                 sh '''
-                curl -u admin:admin $SONAR_SERVER/api/issues/search?componentKeys=addressbook > sonar-report.json
+                curl -u admin:admin http://13.221.57.54:9000/api/issues/search?componentKeys=addressbook > sonar-report.json
                 '''
             }
         }
@@ -84,6 +80,7 @@ pipeline {
                 '''
             }
         }
+
     }
 
     post {
