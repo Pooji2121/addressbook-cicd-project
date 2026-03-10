@@ -45,9 +45,9 @@ pipeline {
             }
         }
 
-        stage('Deploy the project on tomcat') {
+        stage('Deploy to Tomcat') {
             steps {
-                sh 'sudo cp /var/lib/jenkins/workspace/addressbook-pipeline/target/addressbook.war /home/ubuntu/apache-tomcat-8.5.100/webapps/'
+                sh 'sudo cp target/addressbook.war /home/ubuntu/apache-tomcat-8.5.100/webapps/'
             }
         }
 
